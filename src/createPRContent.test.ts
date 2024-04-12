@@ -30,7 +30,7 @@ This PR aggregates everything you've done in asssociated repos within the last w
             repo: 'repo-abc',
         };
         const prData = {
-            destinationBranch: 'main',
+            destinationBranch: 'master',
             endDate,
             startDate,
             tempBranch: 'temp/automated-thing',
