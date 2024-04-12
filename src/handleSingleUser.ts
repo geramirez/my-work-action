@@ -10,7 +10,7 @@ import handleIssueGroups from "./groupIssues";
 import { sleep } from './shared';
 import handleDiscussionGroups from "./groupDiscussions";
 
-async function handleSingleUser(inputFields: InputFields, username: string, startDate: Date) {
+async function fetchDataForSingleUser(inputFields: InputFields, username: string, startDate: Date) {
     const startDateIso = startDate.toISOString();
     const destinationBranch = inputFields.destinationBranch;
     
@@ -37,6 +37,31 @@ async function handleSingleUser(inputFields: InputFields, username: string, star
         prsCreated.push(repoData.prsCreated);
     }
 
+    return {
+        discussionComments,
+        discussionsCreated,
+        issuesCreated,
+        issueComments,
+        prComments,
+        prCommits,
+        prsCreated,
+    }
+}
+
+
+async function handleSingleUser(inputFields: InputFields, username: string, startDate: Date) {
+    
+    const data = await fetchDataForSingleUser(inputFields, username, startDate)
+    const {
+        discussionComments,
+        discussionsCreated,
+        issuesCreated,
+        issueComments,
+        prComments,
+        prCommits,
+        prsCreated,
+    } = data;
+
     // group all the things
     const prGroups = handlePRGroups(prsCreated, prComments, prCommits);
     const issueGroups = handleIssueGroups(issuesCreated, issueComments);
@@ -46,7 +71,7 @@ async function handleSingleUser(inputFields: InputFields, username: string, star
     const documentBody = makeGroupsIntoMarkdown([prGroups, issueGroups, discussionGroups], username, startDate, inputFields.project_field);
 
     // create a branch
-    const { ref } = await openBranch(inputFields, username, destinationBranch);
+    const { ref } = await openBranch(inputFields, username, inputFields.destinationBranch);
 
     // commit to branch
     await commitToBranch(inputFields, username, ref.id, ref.target.oid, documentBody);
@@ -54,6 +79,6 @@ async function handleSingleUser(inputFields: InputFields, username: string, star
     // open a PR
     const body = createPRBodyText(startDate, new Date(), username);
 
-    return openPR(inputFields, username, ref.name, body, destinationBranch);
+    return openPR(inputFields, username, ref.name, body, inputFields.destinationBranch);
 }
 export default handleSingleUser;
