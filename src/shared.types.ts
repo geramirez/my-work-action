@@ -52,6 +52,7 @@ export interface InputFields {
     timespan: number;
     usernames: string;
     project_field: string;
+    fetch_graph_data: boolean;
 }
 
 type WorkItemType = 'pull-request' | 'discussion' | 'issue' | 'review' | 'commit' | 'comment';

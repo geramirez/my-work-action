@@ -19,6 +19,7 @@ export const makeValidatedInput = (GH_TOKEN: string) => {
         timespan: parseInt(core.getInput('timespan') || '7'),
         usernames: '',
         project_field: core.getInput("project_field"),
+        fetch_graph_data: core.getInput("fetch_graph_data") === 'true',
     };
 
     const requiredInputs = ["owner", "repo", "queried_repos", "usernames"];

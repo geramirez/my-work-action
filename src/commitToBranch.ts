@@ -12,10 +12,24 @@ mutation myCreateCommitOnBranch($input: CreateCommitOnBranchInput!) {
 }
 `
 
-const commitToBranch = async ({ owner, repo }: InputFields, username: string, branchNodeId: string, branchSha: string, documentBody: string): Promise<{ ref: { id: string } }> => {
+const commitToBranch = async ({ owner, repo, fetch_graph_data }: InputFields, username: string, branchNodeId: string, branchSha: string, documentBody: string, rawData: string): Promise<{ ref: { id: string } }> => {
     const today = (new Date()).toISOString().replace(/T.*$/, "");
     const commitMessage = 'Generated commit from my-work-action';
     const requestOwner = repo.includes('/') ? repo.split('/')[0] : owner;
+    
+    const additions = [{
+            path: `my-work/${username}/${today}.md`,
+            contents: base64encode(documentBody),
+        },
+    ]
+
+    if (fetch_graph_data) {
+        additions.push({
+            path: `my-work/${username}/raw_data.txt`,
+            contents: base64encode(rawData),
+        })
+    }
+
     const changeData = {
         owner: requestOwner,
         repo,
@@ -25,10 +39,7 @@ const commitToBranch = async ({ owner, repo }: InputFields, username: string, br
             },
             expectedHeadOid: branchSha,
             fileChanges: {
-                additions: [{
-                    path: `my-work/${username}/${today}.md`,
-                    contents: base64encode(documentBody),
-                }],
+                additions,
             },
             message: {
                 headline: commitMessage,

@@ -29,7 +29,6 @@ describe('groupDiscussions', () => {
     test('handleDiscussionGroups', async () => {
         const result = await handleDiscussionGroups([mockData.discussionsCreated], [mockData.discussionComments]);
 
-        console.log(result)
         expect(result.primary['github/issues']).toBeTruthy();
         expect(result.primary['github/issues'].artifacts.length).toEqual(3);
 

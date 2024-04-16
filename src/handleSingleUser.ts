@@ -1,7 +1,6 @@
 import { InputFields, OutputGroupGroup, QueryGroup } from "./shared.types";
 import handlePRGroups from "./groupPRs";
 import { getAllWorkForRepository } from "./queries";
-import makeGroupsIntoMarkdown from "./makeGroupsIntoMarkdown";
 import openBranch from "./openBranch";
 import commitToBranch from "./commitToBranch";
 import openPR from "./openPR";
@@ -9,6 +8,8 @@ import { createPRBodyText } from "./createPRContent";
 import handleIssueGroups from "./groupIssues";
 import { sleep } from './shared';
 import handleDiscussionGroups from "./groupDiscussions";
+import handleGraphData from './graphData';
+import makeGroupsIntoMarkdown from "./makeGroupsIntoMarkdown";
 
 async function fetchDataForSingleUser(inputFields: InputFields, username: string, startDate: Date) {
     const startDateIso = startDate.toISOString();
@@ -49,9 +50,8 @@ async function fetchDataForSingleUser(inputFields: InputFields, username: string
 }
 
 
-async function handleSingleUser(inputFields: InputFields, username: string, startDate: Date) {
+export default async function handleSingleUser(inputFields: InputFields, username: string, startDate: Date) {
     
-    const data = await fetchDataForSingleUser(inputFields, username, startDate)
     const {
         discussionComments,
         discussionsCreated,
@@ -60,12 +60,25 @@ async function handleSingleUser(inputFields: InputFields, username: string, star
         prComments,
         prCommits,
         prsCreated,
-    } = data;
+    } = await fetchDataForSingleUser(inputFields, username, startDate)
 
     // group all the things
     const prGroups = handlePRGroups(prsCreated, prComments, prCommits);
     const issueGroups = handleIssueGroups(issuesCreated, issueComments);
     const discussionGroups = handleDiscussionGroups(discussionsCreated, discussionComments);
+    
+    const graphCSV = handleGraphData(
+        username,
+        [  
+            discussionComments,
+            discussionsCreated,
+            issuesCreated,
+            issueComments,
+            prComments,
+            prCommits,
+            prsCreated,
+        ]
+    )
 
     // format the groups into markdown
     const documentBody = makeGroupsIntoMarkdown([prGroups, issueGroups, discussionGroups], username, startDate, inputFields.project_field);
@@ -74,11 +87,10 @@ async function handleSingleUser(inputFields: InputFields, username: string, star
     const { ref } = await openBranch(inputFields, username, inputFields.destinationBranch);
 
     // commit to branch
-    await commitToBranch(inputFields, username, ref.id, ref.target.oid, documentBody);
+    await commitToBranch(inputFields, username, ref.id, ref.target.oid, documentBody, graphCSV);
 
     // open a PR
     const body = createPRBodyText(startDate, new Date(), username);
 
     return openPR(inputFields, username, ref.name, body, inputFields.destinationBranch);
 }
-export default handleSingleUser;
