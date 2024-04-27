@@ -16,17 +16,38 @@ const commitToBranch = async ({ owner, repo, fetch_graph_data }: InputFields, us
     const today = (new Date()).toISOString().replace(/T.*$/, "");
     const commitMessage = 'Generated commit from my-work-action';
     const requestOwner = repo.includes('/') ? repo.split('/')[0] : owner;
-    
+
     const additions = [{
-            path: `my-work/${username}/${today}.md`,
-            contents: base64encode(documentBody),
-        },
+        path: `my-work/${username}/${today}.md`,
+        contents: base64encode(documentBody),
+    },
     ]
 
     if (fetch_graph_data) {
+
+        const rawFilePath = `my-work/${username}/raw_data.txt`
+        const currentData: any = await graphql(`
+        query ($owner: String!, $name: String!, $expression: String!) {
+            repository(owner: $owner, name: $name) {
+                object(expression: $expression) {
+                    ... on Blob {
+                        text
+                    }
+                }
+            }
+        }
+    `, {
+            owner: requestOwner,
+            name: repo,
+            expression: `${branchSha}:${rawFilePath}`,
+            headers: {
+                authorization: `token ${process.env.GH_TOKEN}`
+            },
+        });
+
         additions.push({
-            path: `my-work/${username}/raw_data.txt`,
-            contents: base64encode(rawData),
+            path: rawFilePath,
+            contents: currentData.repository.object.text + base64encode(rawData),
         })
     }
 
@@ -54,4 +75,7 @@ const commitToBranch = async ({ owner, repo, fetch_graph_data }: InputFields, us
         changeData,
     );
 }
+
+
+
 export default commitToBranch;
