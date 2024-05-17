@@ -1,4 +1,5 @@
 import { graphql } from "@octokit/graphql";
+import { Octokit } from "@octokit/rest";
 import { base64encode } from "./shared";
 import { InputFields } from "./shared.types";
 
@@ -24,30 +25,19 @@ const commitToBranch = async ({ owner, repo, fetch_graph_data }: InputFields, us
     ]
 
     if (fetch_graph_data) {
-
-        const rawFilePath = `my-work/${username}/raw_data.txt`
-        const currentData: any = await graphql(`
-        query ($owner: String!, $name: String!, $expression: String!) {
-            repository(owner: $owner, name: $name) {
-                object(expression: $expression) {
-                    ... on Blob {
-                        text
-                    }
-                }
-            }
+        let fileContent = ""
+        const octokit = new Octokit({ auth: `${process.env.GH_TOKEN}` });
+        const path = `my-work/${username}/raw_data.txt`
+        try {
+            const response : any = await octokit.repos.getContent({ owner, repo, path });
+            fileContent = Buffer.from(response.data.content, 'base64').toString() + rawData
+        } catch {
+            fileContent = rawData
         }
-    `, {
-            owner: requestOwner,
-            name: repo,
-            expression: `${branchSha}:${rawFilePath}`,
-            headers: {
-                authorization: `token ${process.env.GH_TOKEN}`
-            },
-        });
 
         additions.push({
-            path: rawFilePath,
-            contents: currentData.repository.object.text + base64encode(rawData),
+            path: path,
+            contents: Buffer.from(fileContent).toString('base64'),
         })
     }
 
