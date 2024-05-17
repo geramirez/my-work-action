@@ -30,7 +30,7 @@ const commitToBranch = async ({ owner, repo, fetch_graph_data }: InputFields, us
         const path = `my-work/${username}/raw_data.txt`
         try {
             const response : any = await octokit.repos.getContent({ owner, repo, path });
-            fileContent = Buffer.from(response.data.content, 'base64').toString() + rawData
+            fileContent = Buffer.from(response.data.content, 'base64').toString() + rawData.substring(rawData.indexOf('\n') + 1);
         } catch {
             fileContent = rawData
         }
