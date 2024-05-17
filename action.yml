@@ -23,6 +23,9 @@ inputs:
   destination_branch:
     description: "The branch for a PR to be created against. Defaults to 'main'."
     required: false
+  fetch_graph_data:
+    description: "Fetch graph data"
+    required: false
 runs:
   using: "node20"
   main: "dist/index.js"
