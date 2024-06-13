@@ -178,7 +178,7 @@ fragment repo on Repository {
 `;
 export const getAllWorkForRepository = async (requestOwner: string, repoName: string, username: string, sinceIso: string, projectField?: string): Promise<{ [key: string]: QueryGroup }> => {
   const projectFieldVariables = projectField ? { addProjectFields: true, projectField } : {};
-    const { repository, prsCreated, prReviewsAndCommits, issueComments, discussionComments, discussionsCreated } = await graphql(repositoryQuery, {
+    const data = await graphql(repositoryQuery, {
         username,
         owner: requestOwner,
         repo: repoName,
@@ -186,13 +186,14 @@ export const getAllWorkForRepository = async (requestOwner: string, repoName: st
         prsCreatedQuery: `repo:${requestOwner}/${repoName} is:pr created:>=${sinceIso} author:${username}`,
         prContributionsQuery: `repo:${requestOwner}/${repoName} is:pr created:>=${sinceIso} -author:${username} involves:${username}`,
         issueCommentsQuery: `repo:${requestOwner}/${repoName} is:issue commenter:${username} updated:>=${sinceIso} sort:updated-desc`,
-        discussionsCreatedQuery: `repo:${requestOwner}/${repoName} created:>=${sinceIso}} author:${username}`,
+        discussionsCreatedQuery: `repo:${requestOwner}/${repoName} created:>=${sinceIso} author:${username}`,
         discussionsInvolvedQuery: `repo:${requestOwner}/${repoName} updated:>=${sinceIso} involves:${username}`,
         headers: {
             authorization: `token ${GH_TOKEN}`
         },
         ...projectFieldVariables
     });
+    const { repository, prsCreated, prReviewsAndCommits, issueComments, discussionComments, discussionsCreated } = data as any
     console.log('query input', '\nsince iso:', sinceIso, '\nrepo', repoName, '\nowner', requestOwner)
 
     const flattenedIssueComments = issueComments.nodes.reduce((arr, { title, url, comments: { nodes }}) => {
