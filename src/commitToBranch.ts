@@ -27,7 +27,7 @@ const commitToBranch = async ({ owner, repo, fetch_graph_data }: InputFields, us
     if (fetch_graph_data) {
         let fileContent = ""
         const octokit = new Octokit({ auth: `${process.env.GH_TOKEN}` });
-        const path = `my-work/${username}/raw_data.txt`
+        const path = `my-work/${username}/raw_data.csv`
         try {
             const response : any = await octokit.repos.getContent({ owner, repo, path });
             fileContent = Buffer.from(response.data.content, 'base64').toString() + rawData.substring(rawData.indexOf('\n') + 1);
